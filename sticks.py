@@ -1,31 +1,18 @@
 import cv2
 import numpy as np
 import pygame
-import time
 from camera import open_camera
+from drums_engine import draw_drums, process_hit
 
 pygame.mixer.init()
 
 cap = open_camera()
 
-# Drum pad definitions (x1, y1, x2, y2)
-DRUMS = {
-    "SNARE": (50, 50, 250, 200),
-    "HIHAT": (300, 50, 500, 200),
-    "BASS":  (550, 50, 750, 200),
-}
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
 
-SOUNDS = {
-    "SNARE": pygame.mixer.Sound("sounds/snare.wav"),
-    "HIHAT": pygame.mixer.Sound("sounds/hihat.wav"),
-    "BASS":  pygame.mixer.Sound("sounds/bass.wav"),
-}
-
-HIT_COOLDOWN = 0.25  # seconds
-last_hit_time = {
-    "Blue": 0,
-    "Red": 0
-}
+cv2.namedWindow("Two Stick Tracking", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("Two Stick Tracking", 960, 540)
 
 # HSV ranges
 BLUE_LOWER = np.array([100, 150, 50])
@@ -50,9 +37,6 @@ def detect_color(frame, lower, upper):
             return (x, y, w, h, cx, cy)
     return None
 
-def is_inside(cx, cy, drum):
-    x1, y1, x2, y2 = drum
-    return x1 < cx < x2 and y1 < cy < y2
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -62,10 +46,7 @@ while True:
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # ---------------- DRAW DRUM PADS ----------------
-    for drum, (x1, y1, x2, y2) in DRUMS.items():
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(frame, drum, (x1 + 10, y1 + 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    draw_drums(frame)
 
     # ---------------- BLUE STICK ----------------
     blue = detect_color(hsv, BLUE_LOWER, BLUE_UPPER)
@@ -76,13 +57,7 @@ while True:
         cv2.putText(frame, "Blue Stick", (x, y - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
 
-        for drum_name, drum_area in DRUMS.items():
-            if is_inside(cx, cy, drum_area):
-                current_time = time.time()
-                if current_time - last_hit_time["Blue"] > HIT_COOLDOWN:
-                    SOUNDS[drum_name].play()
-                    last_hit_time["Blue"] = current_time
-
+        process_hit("Left", cx, cy)
 
     # ---------------- RED STICK ----------------
     mask1 = cv2.inRange(hsv, RED_LOWER1, RED_UPPER1)
@@ -104,13 +79,7 @@ while True:
             cv2.putText(frame, "Red Stick", (x, y - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-            for drum_name, drum_area in DRUMS.items():
-                if is_inside(cx, cy, drum_area):
-                    current_time = time.time()
-                    if current_time - last_hit_time["Red"] > HIT_COOLDOWN:
-                        SOUNDS[drum_name].play()
-                        last_hit_time["Red"] = current_time
-
+            process_hit("Right", cx, cy)
 
     cv2.imshow("Two Stick Tracking", frame)
 
@@ -118,4 +87,4 @@ while True:
         break
 
 cap.release()
-#cv2.destroyAllWindows()
+# cv2.destroyAllWindows()
