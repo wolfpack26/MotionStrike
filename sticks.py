@@ -8,11 +8,11 @@ pygame.mixer.init()
 
 cap = open_camera()
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-cv2.namedWindow("Two Stick Tracking", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("Two Stick Tracking", 960, 540)
+cv2.namedWindow("MotionStrike", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("MotionStrike", 1280, 720)
 
 # HSV ranges
 BLUE_LOWER = np.array([100, 150, 50])
@@ -81,7 +81,7 @@ while True:
 
             process_hit("Right", cx, cy)
 
-    cv2.imshow("Two Stick Tracking", frame)
+    cv2.imshow("MotionStrike", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
