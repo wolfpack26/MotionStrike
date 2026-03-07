@@ -57,7 +57,7 @@ while True:
         cv2.putText(frame, "Blue Stick", (x, y - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
 
-        process_hit("Left", cx, cy)
+        process_hit("Left", (cx, cy), (cx, cy))
 
     # ---------------- RED STICK ----------------
     mask1 = cv2.inRange(hsv, RED_LOWER1, RED_UPPER1)
@@ -79,7 +79,7 @@ while True:
             cv2.putText(frame, "Red Stick", (x, y - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-            process_hit("Right", cx, cy)
+            process_hit("Right", (cx, cy), (cx, cy))
 
     cv2.imshow("MotionStrike", frame)
 
