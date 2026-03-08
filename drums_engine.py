@@ -1,20 +1,21 @@
 import pygame
 import time
+import math
 
 pygame.mixer.init()
 
 SOUNDS = {
     # Top row
-    "HIHAT_CLOSED": pygame.mixer.Sound("sounds/hihat.wav"),
+    "HIHAT_CLOSED": pygame.mixer.Sound("sounds/closed_hihat.wav"),
     "SNARE":        pygame.mixer.Sound("sounds/snare.wav"),
-    "CRASH":        pygame.mixer.Sound("sounds/hihat.wav"),
+    "CRASH":        pygame.mixer.Sound("sounds/crash_cymbal.wav"),
     "RIDE":         pygame.mixer.Sound("sounds/hihat.wav"),
 
     # Middle row
-    "HIHAT_OPEN":   pygame.mixer.Sound("sounds/hihat.wav"),
-    "TOM1":         pygame.mixer.Sound("sounds/tom.wav"),
-    "TOM2":         pygame.mixer.Sound("sounds/tom.wav"),
-    "FLOOR_TOM":    pygame.mixer.Sound("sounds/tom.wav"),
+    "HIHAT_OPEN":   pygame.mixer.Sound("sounds/open_hihat.wav"),
+    "HIGH TOM":     pygame.mixer.Sound("sounds/high_tom.wav"),
+    "MID TOM":      pygame.mixer.Sound("sounds/mid_tom.wav"),
+    "FLOOR_TOM":    pygame.mixer.Sound("sounds/floor_tom.wav"),
 
     # Bottom row
     "BASS":         pygame.mixer.Sound("sounds/bass.wav"),
@@ -28,17 +29,26 @@ DRUMS = {
     "RIDE":         (1000, 40, 1200, 180),
 
     "HIHAT_OPEN":   (40, 200, 240, 360),
-    "TOM1":         (500, 200, 700, 360),
-    "TOM2":         (720, 200, 920, 360),
+    "HIGH TOM":     (500, 200, 700, 360),
+    "MID TOM":      (720, 200, 920, 360),
     "FLOOR_TOM":    (940, 200, 1140, 360),
 
     "BASS":         (500, 450, 840, 650),
 }
 
 HIT_COOLDOWN = 0.25
-# Cooldown per drum zone so each pad can be hit independently
+
 last_hit_time = {drum: 0 for drum in DRUMS}
-active_drums = {}  # drum_name -> hit timestamp for visual flash
+active_drums = {}
+
+# --- Velocity / intent thresholds (px/s) — tune to taste ---
+MIN_HIT_VELOCITY = 300
+MAX_HIT_VELOCITY = 1500
+MIN_DOWNWARD_DY  = 5
+
+# --- Z-depth gate (MediaPipe z: negative = pushed toward camera) ---
+Z_STRIKE_THRESHOLD = -0.05
+DEBUG_Z = False
 
 def draw_drums(frame):
     import cv2
@@ -55,15 +65,36 @@ def draw_drums(frame):
         cv2.putText(frame, drum, (x1 + 10, y1 + 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
-def process_hit(hand_name, index_tip, wrist):
-    """index_tip (x,y) triggers all drums except BASS; wrist (x,y) triggers BASS."""
+def process_hit(hand_name, index_tip, wrist,
+                velocity=float('inf'), dy=float('inf'), index_z=0.0):
+    """
+    index_tip (x,y) -- triggers all drums except BASS
+    wrist     (x,y) -- triggers BASS
+    velocity        -- px/s of tracked point (intent gate + volume)
+    dy              -- vertical displacement since last sample (+ve = downward)
+    index_z         -- MediaPipe z of landmark 8 (negative = toward camera)
+    Defaults to float('inf') so sticks.py calls bypass all gates at full volume.
+    """
     current_time = time.time()
+
+    # Map velocity to a 0.1–1.0 volume
+    raw_vol = (velocity - MIN_HIT_VELOCITY) / (MAX_HIT_VELOCITY - MIN_HIT_VELOCITY)
+    volume  = max(0.1, min(1.0, raw_vol))
 
     for drum_name, (x1, y1, x2, y2) in DRUMS.items():
         cx, cy = wrist if drum_name == "BASS" else index_tip
         if x1 < cx < x2 and y1 < cy < y2:
             if current_time - last_hit_time[drum_name] > HIT_COOLDOWN:
+                # Intent gate: must be a downward strike above minimum speed
+                if velocity < MIN_HIT_VELOCITY or dy < MIN_DOWNWARD_DY:
+                    continue
+                # Z-depth gate: skip for BASS (wrist z is always 0)
+                if drum_name != "BASS" and index_z > Z_STRIKE_THRESHOLD:
+                    continue
                 if drum_name in SOUNDS:
-                    SOUNDS[drum_name].play()
+                    channel = pygame.mixer.find_channel(True)
+                    if channel:
+                        channel.set_volume(volume)
+                        channel.play(SOUNDS[drum_name])
                 last_hit_time[drum_name] = current_time
                 active_drums[drum_name] = current_time
