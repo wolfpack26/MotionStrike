@@ -18,7 +18,7 @@ mp_draw = mp.solutions.drawing_utils
 
 # Position history buffers per hand: entries are (x, y, timestamp)
 position_history = {"Left": deque(maxlen=5), "Right": deque(maxlen=5)}
-wrist_history    = {"Left": deque(maxlen=5), "Right": deque(maxlen=5)}
+thumb_history    = {"Left": deque(maxlen=5), "Right": deque(maxlen=5)}
 
 def compute_velocity(history):
     """Return (velocity px/s, dy) using oldest and newest buffer entries."""
@@ -61,17 +61,17 @@ while True:
             iy = int(index.y * h)
             index_z = index.z
 
-            # Wrist (landmark 0) triggers BASS
-            wrist = hand.landmark[0]
-            wx = int(wrist.x * w)
-            wy = int(wrist.y * h)
+            # thumb (landmark 4) triggers BASS
+            thumb = hand.landmark[4]
+            wx = int(thumb.x * w)
+            wy = int(thumb.y * h)
 
             # Update position history and compute velocity + direction
             now = time.time()
             position_history[label].append((ix, iy, now))
-            wrist_history[label].append((wx, wy, now))
+            thumb_history[label].append((wx, wy, now))
             tip_vel,   tip_dy   = compute_velocity(position_history[label])
-            wrist_vel, wrist_dy = compute_velocity(wrist_history[label])
+            thumb_vel, thumb_dy = compute_velocity(thumb_history[label])
 
             cv2.circle(frame, (ix, iy), 10, (255, 0, 255), -1)
             cv2.circle(frame, (wx, wy), 8, (255, 180, 0), -1)
