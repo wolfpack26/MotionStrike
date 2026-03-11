@@ -23,15 +23,15 @@ SOUNDS = {
 
 DRUMS = {
     # (x1, y1, x2, y2)
-    "HIHAT_CLOSED": (40, 40, 240, 180),
-    "SNARE":        (260, 40, 460, 180),
-    "CRASH":        (780, 40, 980, 180),
-    "RIDE":         (1000, 40, 1200, 180),
+    "HIHAT_CLOSED": (40, 40, 240, 330),
+    "SNARE":        (260, 40, 460, 330),
+    "CRASH":        (680, 40, 880, 180),
+    "RIDE":         (980, 40, 1180, 180),
 
-    "HIHAT_OPEN":   (40, 200, 240, 360),
-    "HIGH TOM":     (500, 200, 700, 360),
-    "MID TOM":      (720, 200, 920, 360),
-    "FLOOR_TOM":    (940, 200, 1140, 360),
+    "HIHAT_OPEN":   (40, 360, 240, 700),
+    "HIGH TOM":     (700, 200, 920, 420),
+    "MID TOM":      (940, 200, 1160, 420),
+    "FLOOR_TOM":    (960, 440, 1160, 700),
 
     "BASS":         (500, 450, 840, 650),
 }
@@ -65,11 +65,11 @@ def draw_drums(frame):
         cv2.putText(frame, drum, (x1 + 10, y1 + 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
-def process_hit(hand_name, index_tip, wrist,
+def process_hit(hand_name, index_tip, thumb,
                 velocity=float('inf'), dy=float('inf'), index_z=0.0):
     """
     index_tip (x,y) -- triggers all drums except BASS
-    wrist     (x,y) -- triggers BASS
+    thumb     (x,y) -- triggers BASS
     velocity        -- px/s of tracked point (intent gate + volume)
     dy              -- vertical displacement since last sample (+ve = downward)
     index_z         -- MediaPipe z of landmark 8 (negative = toward camera)
@@ -82,13 +82,13 @@ def process_hit(hand_name, index_tip, wrist,
     volume  = max(0.1, min(1.0, raw_vol))
 
     for drum_name, (x1, y1, x2, y2) in DRUMS.items():
-        cx, cy = wrist if drum_name == "BASS" else index_tip
+        cx, cy = thumb if drum_name == "BASS" else index_tip
         if x1 < cx < x2 and y1 < cy < y2:
             if current_time - last_hit_time[drum_name] > HIT_COOLDOWN:
                 # Intent gate: must be a downward strike above minimum speed
                 if velocity < MIN_HIT_VELOCITY or dy < MIN_DOWNWARD_DY:
                     continue
-                # Z-depth gate: skip for BASS (wrist z is always 0)
+                # Z-depth gate: skip for BASS (thumb z is always 0)
                 if drum_name != "BASS" and index_z > Z_STRIKE_THRESHOLD:
                     continue
                 if drum_name in SOUNDS:
