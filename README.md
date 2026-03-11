@@ -100,7 +100,7 @@ Uses **MediaPipe Hands** to detect up to two hands simultaneously.
 
 - The full 21-point hand skeleton is drawn on screen.
 - **Index fingertip** (landmark 8) — pink dot — triggers HIHAT_CLOSED, HIHAT_OPEN, SNARE, CRASH, RIDE, TOM1, TOM2, FLOOR_TOM.
-- **thumb** (landmark 0) — orange dot — triggers the BASS pad. Drop your thumb into the bass zone to kick it.
+- **thumb** (landmark 4) — blue dot — triggers the BASS pad. Drop your thumb into the bass zone to kick it.
 - Handedness (Left / Right label) is correctly resolved after the horizontal camera flip.
 
 ### Stick Mode (`sticks.py`)
