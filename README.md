@@ -6,13 +6,13 @@ MotionStrike is a real-time, camera-based virtual drum kit. No physical drums, n
 
 ## How It Works
 
-The app reads your webcam feed, overlays a drum kit layout on screen, and detects when a tracked point (fingertip, wrist, or colored stick tip) enters a pad's bounding box. When a hit is registered, the corresponding drum sound plays instantly via pygame and the pad flashes yellow as visual feedback.
+The app reads your webcam feed, overlays a drum kit layout on screen, and detects when a tracked point (fingertip, thumb, or colored stick tip) enters a pad's bounding box. When a hit is registered, the corresponding drum sound plays instantly via pygame and the pad flashes yellow as visual feedback.
 
 There are two independent tracking modes selectable at launch:
 
 | Mode | Method | Trigger |
 |------|--------|---------|
-| **Hand Mode** | Google MediaPipe hand skeleton | Index fingertip → all drums; Wrist → Bass |
+| **Hand Mode** | Google MediaPipe hand skeleton | Index fingertip → all drums; thumb → Bass |
 | **Stick Mode** | HSV color detection | Blue stick → Left hand; Red stick → Right hand |
 
 ---
@@ -100,7 +100,7 @@ Uses **MediaPipe Hands** to detect up to two hands simultaneously.
 
 - The full 21-point hand skeleton is drawn on screen.
 - **Index fingertip** (landmark 8) — pink dot — triggers HIHAT_CLOSED, HIHAT_OPEN, SNARE, CRASH, RIDE, TOM1, TOM2, FLOOR_TOM.
-- **Wrist** (landmark 0) — orange dot — triggers the BASS pad. Drop your wrist into the bass zone to kick it.
+- **thumb** (landmark 0) — orange dot — triggers the BASS pad. Drop your thumb into the bass zone to kick it.
 - Handedness (Left / Right label) is correctly resolved after the horizontal camera flip.
 
 ### Stick Mode (`sticks.py`)
