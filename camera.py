@@ -17,6 +17,7 @@ def open_camera():
 
     if not cap.isOpened():
         raise RuntimeError("Could not open camera")
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
     # Safe default resolution
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
