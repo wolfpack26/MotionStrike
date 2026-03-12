@@ -2,6 +2,7 @@ import pygame
 import time
 import math
 
+pygame.mixer.pre_init(44100, -16, 2, 256)
 pygame.mixer.init()
 
 SOUNDS = {
@@ -36,18 +37,20 @@ DRUMS = {
     "BASS":         (500, 450, 840, 650),
 }
 
-HIT_COOLDOWN = 0.25
+HIT_COOLDOWN = 0.15
 
 last_hit_time = {drum: 0 for drum in DRUMS}
 active_drums = {}
+pygame.mixer.set_num_channels(len(DRUMS) + 4)
+_CHANNELS = {drum: pygame.mixer.Channel(i) for i, drum in enumerate(DRUMS)}
 
 # --- Velocity / intent thresholds (px/s) — tune to taste ---
-MIN_HIT_VELOCITY = 300
+MIN_HIT_VELOCITY = 200
 MAX_HIT_VELOCITY = 1500
-MIN_DOWNWARD_DY  = 5
+MIN_DOWNWARD_DY  = 2
 
 # --- Z-depth gate (MediaPipe z: negative = pushed toward camera) ---
-Z_STRIKE_THRESHOLD = -0.05
+Z_STRIKE_THRESHOLD = 0.1
 DEBUG_Z = False
 
 def draw_drums(frame):
@@ -92,9 +95,8 @@ def process_hit(hand_name, index_tip, thumb,
                 if drum_name != "BASS" and index_z > Z_STRIKE_THRESHOLD:
                     continue
                 if drum_name in SOUNDS:
-                    channel = pygame.mixer.find_channel(True)
-                    if channel:
-                        channel.set_volume(volume)
-                        channel.play(SOUNDS[drum_name])
+                    ch = _CHANNELS[drum_name]
+                    ch.set_volume(volume)
+                    ch.play(SOUNDS[drum_name])
                 last_hit_time[drum_name] = current_time
                 active_drums[drum_name] = current_time
