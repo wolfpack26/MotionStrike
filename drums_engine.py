@@ -69,31 +69,37 @@ def draw_drums(frame):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
 def process_hit(hand_name, index_tip, thumb,
-                velocity=float('inf'), dy=float('inf'), index_z=0.0):
+                velocity=float('inf'), dy=float('inf'), index_z=0.0,
+                thumb_velocity=float('inf'), thumb_dy=float('inf')):
     """
-    index_tip (x,y) -- triggers all drums except BASS
-    thumb     (x,y) -- triggers BASS
-    velocity        -- px/s of tracked point (intent gate + volume)
-    dy              -- vertical displacement since last sample (+ve = downward)
-    index_z         -- MediaPipe z of landmark 8 (negative = toward camera)
+    index_tip      (x,y) -- triggers all drums except BASS
+    thumb          (x,y) -- triggers BASS
+    velocity             -- index fingertip px/s (intent gate + volume for all non-BASS)
+    dy                   -- index fingertip vertical displacement (+ve = downward)
+    index_z              -- MediaPipe z of landmark 8
+    thumb_velocity       -- thumb px/s (intent gate + volume for BASS)
+    thumb_dy             -- thumb vertical displacement (+ve = downward)
     Defaults to float('inf') so sticks.py calls bypass all gates at full volume.
     """
     current_time = time.time()
 
-    # Map velocity to a 0.1–1.0 volume
-    raw_vol = (velocity - MIN_HIT_VELOCITY) / (MAX_HIT_VELOCITY - MIN_HIT_VELOCITY)
-    volume  = max(0.1, min(1.0, raw_vol))
-
     for drum_name, (x1, y1, x2, y2) in DRUMS.items():
-        cx, cy = thumb if drum_name == "BASS" else index_tip
+        is_bass = drum_name == "BASS"
+        cx, cy  = thumb if is_bass else index_tip
+        hit_vel = thumb_velocity if is_bass else velocity
+        hit_dy  = thumb_dy       if is_bass else dy
+
         if x1 < cx < x2 and y1 < cy < y2:
             if current_time - last_hit_time[drum_name] > HIT_COOLDOWN:
-                # Intent gate: must be a downward strike above minimum speed
-                if velocity < MIN_HIT_VELOCITY or dy < MIN_DOWNWARD_DY:
+                # Intent gate: each point gated by its own velocity and direction
+                if hit_vel < MIN_HIT_VELOCITY or hit_dy < MIN_DOWNWARD_DY:
                     continue
-                # Z-depth gate: skip for BASS (thumb z is always 0)
-                if drum_name != "BASS" and index_z > Z_STRIKE_THRESHOLD:
+                # Z-depth gate: only for non-BASS (thumb z is unreliable)
+                if not is_bass and index_z > Z_STRIKE_THRESHOLD:
                     continue
+                # Volume based on the velocity of whichever point triggered this pad
+                raw_vol = (hit_vel - MIN_HIT_VELOCITY) / (MAX_HIT_VELOCITY - MIN_HIT_VELOCITY)
+                volume  = max(0.1, min(1.0, raw_vol))
                 if drum_name in SOUNDS:
                     ch = _CHANNELS[drum_name]
                     ch.set_volume(volume)
