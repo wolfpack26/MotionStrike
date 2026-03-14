@@ -41,9 +41,14 @@ MotionStrike/
 ├── drums_engine.py    # Pad layout, sound loading, hit detection, visual flash
 ├── camera.py          # Cross-platform camera initialisation (macOS / Windows / Linux)
 ├── sounds/
+│   ├── closed_hihat.wav
+│   ├── open_hihat.wav
+│   ├── crash_cymbal.wav
 │   ├── hihat.wav
 │   ├── snare.wav
-│   ├── tom.wav
+│   ├── high_tom.wav
+│   ├── mid_tom.wav
+│   ├── floor_tom.wav
 │   └── bass.wav
 └── test_cam.py        # Quick camera sanity check
 ```
@@ -53,13 +58,14 @@ MotionStrike/
 ## Requirements
 
 - Python 3.8+
+- Recommended: Python 3.11 or 3.12
 - Webcam (built-in or external)
 
 ### Python dependencies
 
 ```
 opencv-python
-mediapipe
+mediapipe==0.10.9
 pygame
 numpy
 ```
@@ -67,7 +73,7 @@ numpy
 Install everything at once:
 
 ```bash
-pip install opencv-python mediapipe pygame numpy
+pip install opencv-python mediapipe==0.10.9 pygame numpy
 ```
 
 ---
@@ -99,7 +105,7 @@ Press **`q`** in the video window to quit.
 Uses **MediaPipe Hands** to detect up to two hands simultaneously.
 
 - The full 21-point hand skeleton is drawn on screen.
-- **Index fingertip** (landmark 8) — pink dot — triggers HIHAT_CLOSED, HIHAT_OPEN, SNARE, CRASH, RIDE, TOM1, TOM2, FLOOR_TOM.
+- **Index fingertip** (landmark 8) — pink dot — triggers HIHAT_CLOSED, HIHAT_OPEN, SNARE, CRASH, RIDE, HIGH TOM, MID TOM, FLOOR_TOM.
 - **thumb** (landmark 4) — blue dot — triggers the BASS pad. Drop your thumb into the bass zone to kick it.
 - Handedness (Left / Right label) is correctly resolved after the horizontal camera flip.
 
@@ -121,23 +127,9 @@ HSV ranges used:
 
 ---
 
-<!-- ## Instruments & Sound Files
+To use custom samples, replace files in `sounds/` with your own `.wav` files or update the pad mapping in `drums_engine.py`.
 
-| Pad | Sound file | Notes |
-|-----|-----------|-------|
-| HIHAT_CLOSED | `hihat.wav` | |
-| HIHAT_OPEN | `hihat.wav` | Swap for open hi-hat sample when available |
-| CRASH | `hihat.wav` | Swap for `crash.wav` when available |
-| RIDE | `hihat.wav` | Swap for `ride.wav` when available |
-| SNARE | `snare.wav` | |
-| TOM1 | `tom.wav` | |
-| TOM2 | `tom.wav` | |
-| FLOOR_TOM | `tom.wav` | |
-| BASS | `bass.wav` | |
-
-To add a dedicated sound, drop the `.wav` file into the `sounds/` folder and update the corresponding line in `drums_engine.py`.
-
---- -->
+---
 
 ## Camera Compatibility
 
@@ -145,11 +137,25 @@ To add a dedicated sound, drop the `.wav` file into the `sounds/` folder and upd
 
 | OS | Backend |
 |----|---------|
-| macOS | `cv2.VideoCapture(0)`, falls back to index `1` |
+| macOS | `cv2.VideoCapture(1)`, use index '0' for Continuity Camera |
 | Windows | `cv2.VideoCapture(0, cv2.CAP_DSHOW)` |
 | Linux | `cv2.VideoCapture(0)` |
 
 Default capture resolution is set to **1280×720**.
+
+---
+
+## Contributing
+
+Contributions are welcome and appreciated.
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/your-feature-name`).
+3. Make your changes and test locally (`python main.py`).
+4. Commit with a clear message.
+5. Open a Pull Request describing what changed and why.
+
+If you are adding new sounds or changing pad behavior, please include a short demo clip or screenshots in your PR when possible.
 
 ---
 
